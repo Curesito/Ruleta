@@ -1,0 +1,399 @@
+<!-- Curesito -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruleta Aleatoria</title>
+  <style>
+    
+    /* Body y general */
+    
+    body {
+      background-color: rgb(0, 0, 0);
+      color: white;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Contenedor principal de las columnas */
+    
+    #container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 90%;
+      max-width: 1200px;
+      margin-top: 100px; 
+      gap: 20px;
+    }
+    
+    /* Columna izquierda (Ruleta y girar) */
+    
+    #left-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 60px; 
+    }
+
+    /* Columna derecha (Tabla y resetear ruleta */
+    
+    #right-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 60px; 
+    }
+    /* Ruleta */
+    #wheel-container {
+      position: relative;
+      width: 500px;
+      height: 500px;
+    }
+    #wheel {
+      width: 100%;
+      height: 100%;
+      border: 10px solid white;
+      border-radius: 50%;
+      position: relative;
+      background: none;
+      transition: transform 2s ease-out;
+    }
+    #arrow {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid white;
+      position: absolute;
+      top: -15px;
+      left: 51%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    #winner-display {
+      display: none;
+      background-color: darkred;
+      color: white;
+      font-size: 2rem;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      position: absolute;
+      top: 52%;
+      left: 52%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+    }
+
+    /* Confeti */
+    
+    #confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 15;
+      display: none;
+    }
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      opacity: 0.8;
+      animation: fall 3s linear infinite;
+    }
+    @keyframes fall {
+      0% {
+        transform: translateY(-10px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    /* Contenedor de tabla de opciones */
+    
+    #options-container {
+      background-color: grey;
+      padding: 10px;
+      border-radius: 5px;
+      width: 100%;
+      max-height: 600px;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    
+    /* Tabla de opciones */
+    #options-container table {
+      border-collapse: collapse;
+      width: 100%;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    #options-container th,
+    #options-container td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    #options-container tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .color-circle {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    /* Css borrar en tabla parecer un link */
+    
+    .delete-link {
+      cursor: pointer;
+      color: lightblue;
+      text-decoration: underline;
+    }
+    
+    /* Botones e inputs */
+    
+    button, input {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1rem;
+      background-color: grey;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: darkgrey;
+    }
+    input::placeholder {
+      color: white;
+    }
+    
+    /* Girar */
+   
+    #spinButton {
+      margin-top: 30px;
+      padding: 15px 25px;
+      font-size: 1.2rem;
+      position: relative;
+      left: 2%;
+      top: 10px;
+    }
+
+    /* Resetear tabla*/
+
+    #resetButton {
+      margin-top: 20px;
+      padding: 15px 25px;
+      font-size: 1.2rem;
+    }
+ 
+    /* Controles a la derecha (tabla) */
+    #right-controls {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Contenedor confeti -->
+  <div id="confetti"></div>
+  
+  <!-- Contenedor de las dos columnas -->
+  <div id="container">
+    <!-- Columna izquierda -->
+    <div id="left-column">
+      <div id="wheel-container">
+        <div id="arrow"></div>
+        <div id="wheel"></div>
+        <div id="winner-display"></div>
+      </div>
+      <button id="spinButton" onclick="spinWheel()">Girar</button>
+    </div>
+    <!-- Columna derecha -->
+    <div id="right-column">
+      <div id="options-container">
+        <input type="text" id="option-input" placeholder="Opción" onkeydown="handleEnter(event)">
+        <button onclick="addOption()">Agregar Opción</button>
+        <div id="table-container"></div>
+      </div>
+      <div id="right-controls">
+        <button id="resetButton" onclick="resetWheel()">Borrar Ruleta</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    // Referencias 
+    
+    const wheel = document.getElementById('wheel');
+    const winnerDisplay = document.getElementById('winner-display');
+    const tableContainer = document.getElementById('table-container');
+    const confettiContainer = document.getElementById('confetti');
+    const resetButton = document.getElementById('resetButton');
+    let options = [];
+    let colors = []; // Guarda los colores asignados
+    let spinning = false; // Verifica el spin
+
+    function handleEnter(event) {
+      if (event.key === 'Enter') {
+        addOption();
+      }
+    }
+
+    function addOption() {
+  const input = document.getElementById('option-input');
+  const option = input.value.trim();
+  if (option && options.length < 12) {
+    options.push(option);
+    if (options.length === 1) {
+      colors.push("pink");
+    } else {
+      const hue = Math.floor(Math.random() * 360);
+      colors.push(`hsl(${hue}, 70%, 50%)`);
+    }
+    input.value = '';
+    drawWheel();
+    updateOptionsList();
+    winnerDisplay.style.display = 'none';  // Esconde la alerta de "falta 2 opciones"
+  } else if (options.length >= 12) {
+    alert('Máximo de 12 opciones alcanzado.');
+  }
+}
+
+
+    // Dibuja la ruleta usando conic-gradient
+    function drawWheel() {
+      if (options.length === 0) {
+        wheel.style.background = "none";
+        return;
+      }
+      let sliceAngle = 360 / options.length;
+      let gradientParts = [];
+      for (let i = 0; i < options.length; i++) {
+        let startAngle = i * sliceAngle;
+        let endAngle = (i + 1) * sliceAngle;
+        gradientParts.push(`${colors[i]} ${startAngle}deg ${endAngle}deg`);
+      }
+      let gradient = "conic-gradient(" + gradientParts.join(", ") + ")";
+      wheel.style.background = gradient;
+    }
+
+    function spinWheel() {
+      if (spinning) return;
+      if (options.length < 2) {
+        winnerDisplay.textContent = '¡Agrega al menos 2 opciones!';
+        winnerDisplay.style.display = 'block';
+        return;
+      }
+      spinning = true;
+      // Deshabilitar resetear ruleta durante el spin 
+      resetButton.disabled = true;
+
+      const randomIndex = Math.floor(Math.random() * options.length);
+      const rotation = 360 * 10 - (360 / options.length) * randomIndex - (360 / options.length) / 2;
+      wheel.style.transform = `rotate(${rotation}deg)`;
+      
+      setTimeout(() => {
+        document.body.style.backgroundColor = 'darkred';
+        winnerDisplay.textContent = `¡Ganador: ${options[randomIndex]}!`;
+        winnerDisplay.style.display = 'block';
+        launchConfetti();
+        spinning = false;
+        resetButton.disabled = false;
+      }, 2000);
+    }
+
+    function resetWheel() {
+      if (spinning) return;
+      document.body.style.backgroundColor = 'black';
+      winnerDisplay.style.display = 'none';
+      options = [];
+      colors = [];
+      wheel.style.transform = 'rotate(0deg)';
+      wheel.style.background = "none";
+      tableContainer.innerHTML = '';
+      removeConfetti();
+    }
+
+    function updateOptionsList() {
+      let html = `<table>
+                    <thead>
+                      <tr>
+                        <th>Opción</th>
+                        <th>Color</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>`;
+      options.forEach((option, index) => {
+        html += `<tr>
+                  <td>${option}</td>
+                  <td><div class="color-circle" style="background-color: ${colors[index]};"></div></td>
+                  <td><span class="delete-link" onclick="deleteOption(${index})">Borrar</span></td>
+                 </tr>`;
+      });
+      html += `</tbody></table>`;
+      tableContainer.innerHTML = html;
+    }
+
+    function deleteOption(index) {
+      options.splice(index, 1);
+      colors.splice(index, 1);
+      drawWheel();
+      updateOptionsList();
+    }
+
+    // confetti post spin
+
+    function launchConfetti() {
+      confettiContainer.innerHTML = '';
+      confettiContainer.style.display = 'block';
+      const numPieces = 100;
+      for (let i = 0; i < numPieces; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = `hsl(${Math.floor(Math.random()*360)}, 70%, 50%)`;
+        confetti.style.animationDuration = (2 + Math.random() * 3) + 's';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confettiContainer.appendChild(confetti);
+      }
+      setTimeout(() => {
+        removeConfetti();
+      }, 6000);
+    }
+
+    function removeConfetti() {
+      confettiContainer.style.display = 'none';
+      confettiContainer.innerHTML = '';
+    }
+  </script>
+</body>
+</html>
